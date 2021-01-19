@@ -7,7 +7,6 @@ with open("assets/d2_protocol.json", 'r') as f:
 message_pairs: List[Tuple] = [(d2_protocol['messages'][elem]['protocolID'], elem) for elem in
                               d2_protocol['messages'].keys()]
 message_dict: Dict = dict(message_pairs)
-print(message_dict)
 
 
 class Message:

@@ -22,10 +22,10 @@ class PacketSniffer(Thread):
         return self._messages
 
     def run(self) -> None:
-        for pkt in list(self._capture)[:100]:
+        for i, pkt in enumerate(list(self._capture)[:100]):
             if 'payload' in dir(pkt.tcp):
 
-                print()
+                print(f"\nPacket {i+1}")
                 raw_data: bytes = bytes.fromhex(str(pkt.tcp.payload).replace(':', ''))
 
                 ba: ByteArray = ByteArray(raw_data)
@@ -38,17 +38,13 @@ class PacketSniffer(Thread):
                     # the message started in the previous segment
                     if self._is_split:
 
-                        print("Started in the previous segment")
-
                         # the message continues in the next segment
                         if self._current_message_size > ba.size():
-                            print("Message continues in the next segment")
                             self._current_message_data += ba.read_n_bytes(
                                 ba.size())  # ByteArray is now empty, will exit the while loop
 
                         # the message ends in this segment
                         else:
-                            print("Message ends in this segment")
                             self._current_message_data += ba.read_n_bytes(
                                 self._current_message_size - self._current_message_data.size())
 
@@ -72,9 +68,6 @@ class PacketSniffer(Thread):
 
                     # this is a new message
                     else:
-
-                        print("Started in this segment")
-
                         hi_header: int = ba.read_short()
                         message_id: int = hi_header >> 2
                         length_type: int = hi_header & 0b11
@@ -95,12 +88,10 @@ class PacketSniffer(Thread):
                         elif length_type == 3:
                             length = ba.read_short() << 8 + ba.read_byte()
 
-                        print(
-                            f"Message info \t message_id : {message_id} \t length_type : {length_type} \t length : {length} \t instance_id : {instance_id}")
+                        print(f"Message length : {length}")
 
                         # message continues in the next segment
                         if length > ba.size():
-                            print("Message continues in the next segment")
                             self._is_split = True
                             self._current_message_id = message_id
                             self._current_message_size = length
@@ -109,7 +100,6 @@ class PacketSniffer(Thread):
 
                         # message ends in this segment
                         else:
-                            print("Message ends in this segment")
                             # create a new message
                             if str(pkt.tcp.port) != "5555":
                                 emitter_string: str = "client"
